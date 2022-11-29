@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rdb-election
+spec:
+  ports:
+  - port: 2048
+    protocol: TCP
+    targetPort: 2048
+    # nodePort: 32048
+  selector:
+    app: rdb-election
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: rdb-election
+  name: rdb-election
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rdb-election
+  template:
+    metadata:
+      labels:
+        app: rdb-election
+    spec:
+      containers:
+      - image: ratnadeepb/rdb-election:latest
+        name: rdb-election
+        env:
+        - name: ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TRACE_LEVEL
+          value: "info"
+        - name: LEASE_TTL
+          value: "10"
+        - name: SLEEP_TIME
+          value: "2"
+        - name: DBNAME
+          value: "RDeeBee"
+        - name: ETCD
+          value: "etcd:2379"
+        - name: GROUP_SIZE
+          value: "4"
