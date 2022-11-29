@@ -32,10 +32,7 @@ async fn main() -> Result<(), ServerError> {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    // let rt = tokio::runtime::Runtime::new().unwrap();
-
     // Using out struct.
-    // let mut server = match rt.block_on(ServerNode::new()) {
     let mut server = match ServerNode::new().await {
         Ok(server) => {
             info!("Server created");
@@ -47,12 +44,7 @@ async fn main() -> Result<(), ServerError> {
         }
     };
 
-    // // server.get_lease().await?;
-    // rt.block_on(server.get_lease())?;
-    // info!("Server lease: {:#?}", server.lease_id);
-
     server.query_election_prefixes().await?;
-    // rt.block_on(server.query_election_prefixes())?;
     info!("Election leaders: {:#?}", server.election_leaders);
     if let Some(leader_key) = server.leader.clone() {
         info!("This node is a leader for {}", leader_key);
@@ -60,31 +52,17 @@ async fn main() -> Result<(), ServerError> {
         info!("Not a leader");
     }
 
-    // rt.block_on(server.get_leaders())?;
     server.get_leaders().await?;
 
     loop {
         if server.leader.is_none() {
-            // rt.block_on(server.query_election_prefixes()).unwrap();
             server.query_election_prefixes().await?;
         }
 
         if server.leader.is_some() {
-            // rt.block_on(server.keep_alive()).unwrap();
             server.keep_alive().await?;
         }
     }
-
-    // let handle = tokio::spawn(async move {
-    //     server.keep_alive().await.unwrap();
-    // });
-
-    // match tokio::join!(handle) {
-    //     (Ok(_),) => info!("Keep alive joined"),
-    //     (Err(e),) => error!("Keep alive join error: {}", e),
-    // }
-
-    // Ok(())
 }
 
 type Key = String;
